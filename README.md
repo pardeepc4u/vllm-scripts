@@ -6,6 +6,10 @@
 - **GPU 2**: NVIDIA RTX 3080 (10GB VRAM)
 - **Total**: 58GB VRAM
 
+## Requirements
+- `hf` CLI (Hugging Face CLI) - for model downloads
+- `vllm` - installed via setup script
+
 ---
 
 ## Available Models
@@ -18,6 +22,20 @@
 | `04-multi-gpu-chat.sh` | Qwen3-30B-A3B | Multi-GPU chat | 2x RTX 3090 | 8010 |
 | `05-agent-qwen3.sh` | Qwen3-30B-A3B | Agent/Tool use | RTX 3090 | 8004 |
 | `06-run-all.sh` | All above | Run everything | All GPUs | varies |
+
+---
+
+## Manual Model Download
+
+To download models manually using `hf`:
+
+```bash
+# Download Qwen3-30B-A3B (recommended for chat/code)
+hf download Qwen/Qwen3-30B-A3B-Instruct-2507 --local-dir ./models/Qwen3-30B-A3B-Instruct-2507
+
+# Download Mistral-7B (fast completion)
+hf download mistralai/Mistral-7B-Instruct-v0.3 --local-dir ./models/Mistral-7B-Instruct-v0.3
+```
 
 ---
 

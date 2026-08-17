@@ -106,22 +106,15 @@ install_vllm() {
     fi
 }
 
-# ============================================================================
-# Install Additional Dependencies
-# ============================================================================
 install_deps() {
-    log_info "Installing additional dependencies..."
+    log_info "Checking dependencies..."
     
-    # huggingface-hub for model downloads
-    pip3 install huggingface-hub --upgrade
+    if ! command -v hf &> /dev/null; then
+        log_error "hf CLI not found. Install it first."
+        exit 1
+    fi
     
-    # transformers for model support
-    pip3 install transformers --upgrade
-    
-    # accelerate for multi-GPU
-    pip3 install accelerate --upgrade
-    
-    log_success "Dependencies installed"
+    log_success "hf CLI found"
 }
 
 # ============================================================================
@@ -154,7 +147,7 @@ download_model() {
     fi
     
     log_info "Downloading ${model_id}..."
-    huggingface-cli download "$model_id" --local-dir "${MODEL_DIR}/${model_name}" --local-dir-use-symlinks False
+    hf download "$model_id" --local-dir "${MODEL_DIR}/${model_name}"
     log_success "Downloaded ${model_name}"
 }
 
