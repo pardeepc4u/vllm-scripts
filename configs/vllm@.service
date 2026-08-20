@@ -1,0 +1,64 @@
+# ============================================================================
+# vLLM Service Template
+# Generic service that reads configuration from environment files
+# Install: vllm@<config>.service (e.g., vllm@chat.service)
+# ============================================================================
+
+[Unit]
+Description=vLLM Inference Server - %i
+Documentation=https://docs.vllm.ai/
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=vllm
+Group=vllm
+WorkingDirectory=/opt/vllm
+
+# Load environment from config file
+EnvironmentFile=/opt/vllm/configs/vllm.env
+EnvironmentFile=/opt/vllm/configs/vllm-%i.env
+
+# Activate virtual environment and run vLLM
+ExecStart=/bin/bash -c '\
+    source ${VENV_DIR}/bin/activate && \
+    exec vllm serve ${MODEL_NAME} \
+        --host ${DEFAULT_HOST} \
+        --port ${PORT} \
+        --served-model-name ${SERVED_MODEL_NAME} \
+        --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION} \
+        --max-model-len ${MAX_MODEL_LEN} \
+        --max-num-seqs ${MAX_NUM_SEQS} \
+        --dtype ${DEFAULT_DTYPE} \
+        --trust-remote-code ${DEFAULT_TRUST_REMOTE_CODE} \
+        ${QUANTIZATION:+--quantization ${QUANTIZATION}} \
+        ${TENSOR_PARALLEL_SIZE:+--tensor-parallel-size ${TENSOR_PARALLEL_SIZE}} \
+        ${ENABLE_AUTO_TOOL_CHOICE:+--enable-auto-tool-choice} \
+        ${TOOL_CALL_PARSER:+--tool-call-parser ${TOOL_CALL_PARSER}} \
+        --log-file ${LOG_DIR}/vllm-%i.log'
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=30
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=infinity
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/vllm/logs /opt/vllm/models
+PrivateTmp=true
+
+# GPU access
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target

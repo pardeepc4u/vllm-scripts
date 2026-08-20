@@ -1,0 +1,51 @@
+[Unit]
+Description=vLLM Inference Server - Qwen 3.5 27B (Chat + Agent)
+Documentation=https://docs.vllm.ai/
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=vllm
+Group=vllm
+WorkingDirectory=/opt/vllm
+
+EnvironmentFile=/opt/vllm/configs/vllm.env
+EnvironmentFile=/opt/vllm/configs/vllm-chat.env
+
+ExecStart=/bin/bash -c '\
+    source ${VENV_DIR}/bin/activate && \
+    exec vllm serve ${MODEL_NAME} \
+        --host ${DEFAULT_HOST} \
+        --port ${PORT} \
+        --served-model-name ${SERVED_MODEL_NAME} \
+        --served-model-name ${SERVED_MODEL_NAME_2} \
+        --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION} \
+        --max-model-len ${MAX_MODEL_LEN} \
+        --max-num-seqs ${MAX_NUM_SEQS} \
+        --dtype ${DEFAULT_DTYPE} \
+        --trust-remote-code ${DEFAULT_TRUST_REMOTE_CODE} \
+        --quantization ${QUANTIZATION} \
+        --enable-auto-tool-choice \
+        --tool-call-parser ${TOOL_CALL_PARSER} \
+        --log-file ${LOG_DIR}/vllm-chat-agent.log'
+
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=30
+
+LimitNOFILE=65536
+LimitNPROC=infinity
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/vllm/logs /opt/vllm/models
+PrivateTmp=true
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target
