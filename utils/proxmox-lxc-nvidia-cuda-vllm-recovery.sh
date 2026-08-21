@@ -134,7 +134,26 @@ PY
     echo
     info "CUDA toolkit / compiler"
     printf 'PyTorch CUDA version: %s\n' "${torch_cuda:-unknown}"
-    command -v nvcc >/dev/null 2>&1 && nvcc --version || yellow "nvcc not found in PATH."
+    local nvcc_bin="" nvcc_candidate
+    if command -v nvcc >/dev/null 2>&1; then
+        nvcc_bin="$(command -v nvcc)"
+    elif [[ -x /usr/local/cuda/bin/nvcc ]]; then
+        nvcc_bin="/usr/local/cuda/bin/nvcc"
+    else
+        for nvcc_candidate in /usr/local/cuda-*/bin/nvcc; do
+            [[ -x "${nvcc_candidate}" ]] && nvcc_bin="${nvcc_candidate}"
+        done
+    fi
+    if [[ -n "${nvcc_bin}" ]]; then
+        "${nvcc_bin}" --version || true
+        if ! command -v nvcc >/dev/null 2>&1; then
+            yellow "nvcc found at ${nvcc_bin} but not in PATH."
+            yellow "Interactive shells: export PATH=\"$(dirname "${nvcc_bin}"):\$PATH\""
+            yellow "vLLM service: run '$SCRIPT_NAME vllm-configure <cuda-version> --apply'."
+        fi
+    else
+        yellow "nvcc not found in PATH or under /usr/local/cuda*. Install with: $SCRIPT_NAME lxc-install-toolkit <cuda-version> --apply"
+    fi
     ls -ld /usr/local/cuda /usr/local/cuda-* 2>/dev/null || true
     echo
     info "vLLM service environment"
@@ -163,6 +182,15 @@ lxc_align_libraries() {
     apt update
     apt install --allow-downgrades "${packages[@]/%/=${VERSION}-1}"
     ldconfig
+    if ! command -v nvidia-smi >/dev/null 2>&1; then
+        yellow "nvidia-smi binary not present. Note: since driver branch 560, the CUDA"
+        yellow "repo's 'nvidia-smi' package is a transitional dummy without the binary."
+        yellow "Options:"
+        yellow "  1) Review the simulation, then install: apt install nvidia-driver-cuda=${VERSION}-1"
+        yellow "     Reject the transaction if it proposes kernel/DKMS packages."
+        yellow "  2) Copy the matching binary from the Proxmox host:"
+        yellow "     pct push <CTID> /usr/bin/nvidia-smi /usr/bin/nvidia-smi"
+    fi
     green "Libraries updated. Run '$SCRIPT_NAME lxc-diagnose' before starting vLLM."
 }
 

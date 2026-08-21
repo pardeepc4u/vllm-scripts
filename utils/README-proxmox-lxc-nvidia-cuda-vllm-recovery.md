@@ -371,7 +371,7 @@ pct restart <VLLM_CTID>
 | `NVRM: API mismatch` | Host module and LXC driver libraries differ | Run host and LXC diagnostics; align LXC libraries to the exact host version |
 | `Can't initialize NVML` | Mismatched `libnvidia-ml.so` or missing device access | Check `libnvidia-ml1`, `ldconfig`, `/dev/nvidia*`, and LXC configuration |
 | `Failed to infer device type` | PyTorch cannot see a usable CUDA device | Check PyTorch CUDA test, NVML, device mappings, and `CUDA_VISIBLE_DEVICES` |
-| `nvidia-smi: command not found` | CUDA repo's transitional package installed without actual tool binary | Focus first on runtime library alignment; install only a compatible driver-tools package if needed |
+| `nvidia-smi: command not found` | CUDA repo's `nvidia-smi` deb is a transitional dummy without the binary (driver branches ≥560); apt reports it installed anyway | Simulate `apt -s install nvidia-driver-cuda=<host-version>-1` (reject kernel/DKMS proposals), or copy `/usr/bin/nvidia-smi` from the host via `pct push` |
 | `Could not find nvcc` | CUDA Toolkit absent or `CUDA_HOME` absent | Install `cuda-toolkit-X-Y`, point `/usr/local/cuda` to it, add systemd override |
 | Driver works before update, fails after PVE kernel update | DKMS module was not built for new PVE kernel | Install matching `pve-headers-$(uname -r)`, check `dkms status`, rebuild/reinstall driver, reboot |
 | vLLM starts but does not use all GPUs | GPU nodes or `CUDA_VISIBLE_DEVICES` restrict visibility | Check `/dev/nvidia*`, service environment, and vLLM tensor-parallel configuration |
